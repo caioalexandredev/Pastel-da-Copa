@@ -504,7 +504,9 @@ function SidesAdminV2() {
 }
 
 const SVG_ICON_PREFIX = "data:image/svg+xml;base64,";
+const PNG_ICON_PREFIX = "data:image/png;base64,";
 const MAX_SVG_ICON_BYTES = 64 * 1024;
+const MAX_PNG_ICON_BYTES = 128 * 1024;
 
 function sanitizeSvgIcon(svg: string) {
   if (!/<svg[\s>]/i.test(svg)) return null;
@@ -542,6 +544,37 @@ async function readSvgIcon(file: File) {
   return encodeSvgIcon(sanitized);
 }
 
+async function readPngIcon(file: File) {
+  if (!file.name.toLowerCase().endsWith(".png") && file.type !== "image/png") {
+    throw new Error("Escolha um arquivo PNG.");
+  }
+
+  if (file.size > MAX_PNG_ICON_BYTES) {
+    throw new Error("Use um PNG menor que 128 KB.");
+  }
+
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Não foi possível ler o PNG."));
+    reader.readAsDataURL(file);
+  });
+
+  if (!dataUrl.startsWith(PNG_ICON_PREFIX)) {
+    throw new Error("Esse PNG não parece válido.");
+  }
+
+  return dataUrl;
+}
+
+async function readUploadedIcon(file: File) {
+  if (file.type === "image/png" || file.name.toLowerCase().endsWith(".png")) {
+    return readPngIcon(file);
+  }
+
+  return readSvgIcon(file);
+}
+
 function IconPicker({
   value,
   onChange,
@@ -559,7 +592,11 @@ function IconPicker({
       <label className="block">
         <span className="sr-only">{label}</span>
         <select
-          value={value.startsWith(SVG_ICON_PREFIX) ? SIDE_ICON_OPTIONS[0] : value}
+          value={
+            value.startsWith(SVG_ICON_PREFIX) || value.startsWith(PNG_ICON_PREFIX)
+              ? SIDE_ICON_OPTIONS[0]
+              : value
+          }
           onChange={(event) => onChange(event.target.value)}
           className="h-10 w-full rounded-xl border border-input bg-background px-2 text-center text-xl outline-none ring-primary/30 focus:border-primary focus:ring-4"
         >
@@ -572,12 +609,12 @@ function IconPicker({
       </label>
       <label
         className="grid h-10 w-11 cursor-pointer place-items-center rounded-xl bg-muted text-muted-foreground"
-        title="Enviar SVG"
+        title="Enviar SVG ou PNG"
       >
         <Upload className="h-4 w-4" />
         <input
           type="file"
-          accept=".svg,image/svg+xml"
+          accept=".svg,.png,image/svg+xml,image/png"
           className="sr-only"
           onChange={async (event) => {
             const file = event.target.files?.[0];
@@ -585,8 +622,8 @@ function IconPicker({
             if (!file) return;
 
             try {
-              onChange(await readSvgIcon(file));
-              toast.success("SVG carregado!");
+              onChange(await readUploadedIcon(file));
+              toast.success("Ícone carregado!");
             } catch (error) {
               toast.error(
                 error instanceof Error ? error.message : "Não foi possível carregar o SVG.",

@@ -1,7 +1,9 @@
 import { cn } from "@/lib/utils";
 
-export function isSvgSideIcon(value: string) {
-  return value.startsWith("data:image/svg+xml;base64,");
+export function isImageSideIcon(value: string) {
+  return (
+    value.startsWith("data:image/svg+xml;base64,") || value.startsWith("data:image/png;base64,")
+  );
 }
 
 export function SideIcon({
@@ -13,7 +15,7 @@ export function SideIcon({
   label: string;
   className?: string;
 }) {
-  if (isSvgSideIcon(icon)) {
+  if (isImageSideIcon(icon)) {
     return (
       <img
         src={icon}

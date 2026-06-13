@@ -41,7 +41,9 @@ type ScoreboardRow = {
 
 let initPromise: Promise<void> | undefined;
 const SVG_ICON_PREFIX = "data:image/svg+xml;base64,";
+const PNG_ICON_PREFIX = "data:image/png;base64,";
 const MAX_SVG_ICON_BYTES = 64 * 1024;
+const MAX_PNG_ICON_BYTES = 128 * 1024;
 
 const GENERIC_OR_BROKEN_EMOJIS = new Set([
   DEFAULT_SIDE_EMOJI,
@@ -118,6 +120,20 @@ function sanitizeSvgIcon(svg: string) {
   return clean;
 }
 
+function isPngBuffer(buffer: Buffer) {
+  return (
+    buffer.length > 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  );
+}
+
 function cleanSideEmoji(name: string, emoji?: string | null) {
   const trimmed = emoji?.trim();
   if (!trimmed) return inferSideEmoji(name);
@@ -132,6 +148,20 @@ function cleanSideEmoji(name: string, emoji?: string | null) {
       if (!sanitized) return inferSideEmoji(name);
 
       return `${SVG_ICON_PREFIX}${Buffer.from(sanitized, "utf8").toString("base64")}`;
+    } catch {
+      return inferSideEmoji(name);
+    }
+  }
+
+  if (trimmed.startsWith(PNG_ICON_PREFIX)) {
+    try {
+      const base64 = trimmed.slice(PNG_ICON_PREFIX.length);
+      const pngBuffer = Buffer.from(base64, "base64");
+      if (pngBuffer.byteLength > MAX_PNG_ICON_BYTES || !isPngBuffer(pngBuffer)) {
+        return inferSideEmoji(name);
+      }
+
+      return `${PNG_ICON_PREFIX}${pngBuffer.toString("base64")}`;
     } catch {
       return inferSideEmoji(name);
     }
