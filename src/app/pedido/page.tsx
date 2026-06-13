@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/copa/AppShell";
+import { SideIcon } from "@/components/copa/SideIcon";
 import { addOrder, getSides, useStore } from "@/lib/orders-store";
 import { Check, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -82,7 +83,9 @@ export default function PedidoPage() {
                       : "border-border bg-background"
                   }`}
                 >
-                  <span className="text-2xl">{side.emoji}</span>
+                  <span className="grid h-8 w-8 shrink-0 place-items-center">
+                    <SideIcon icon={side.emoji} label={`Ícone de ${side.name}`} />
+                  </span>
                   <span className="flex-1 text-sm font-semibold">{side.name}</span>
                   <span
                     className={`grid h-6 w-6 place-items-center rounded-full border-2 transition-colors ${

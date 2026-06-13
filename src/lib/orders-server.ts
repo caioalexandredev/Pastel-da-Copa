@@ -40,6 +40,8 @@ type ScoreboardRow = {
 };
 
 let initPromise: Promise<void> | undefined;
+const SVG_ICON_PREFIX = "data:image/svg+xml;base64,";
+const MAX_SVG_ICON_BYTES = 64 * 1024;
 
 const GENERIC_OR_BROKEN_EMOJIS = new Set([
   DEFAULT_SIDE_EMOJI,
@@ -104,9 +106,40 @@ function slugifySideName(name: string) {
     .replace(/^-|-$/g, "");
 }
 
+function sanitizeSvgIcon(svg: string) {
+  if (!/<svg[\s>]/i.test(svg)) return null;
+
+  const clean = svg
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
+    .replace(/\s(href|xlink:href)\s*=\s*(['"])\s*javascript:[\s\S]*?\2/gi, "");
+
+  return clean;
+}
+
 function cleanSideEmoji(name: string, emoji?: string | null) {
   const trimmed = emoji?.trim();
-  return trimmed || inferSideEmoji(name);
+  if (!trimmed) return inferSideEmoji(name);
+
+  if (trimmed.startsWith(SVG_ICON_PREFIX)) {
+    try {
+      const base64 = trimmed.slice(SVG_ICON_PREFIX.length);
+      const svgBuffer = Buffer.from(base64, "base64");
+      if (svgBuffer.byteLength > MAX_SVG_ICON_BYTES) return inferSideEmoji(name);
+
+      const sanitized = sanitizeSvgIcon(svgBuffer.toString("utf8"));
+      if (!sanitized) return inferSideEmoji(name);
+
+      return `${SVG_ICON_PREFIX}${Buffer.from(sanitized, "utf8").toString("base64")}`;
+    } catch {
+      return inferSideEmoji(name);
+    }
+  }
+
+  if (trimmed.startsWith("data:")) return inferSideEmoji(name);
+
+  return trimmed;
 }
 
 async function initDb() {

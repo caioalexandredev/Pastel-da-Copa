@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { AppShell } from "@/components/copa/AppShell";
+import { SideIcon } from "@/components/copa/SideIcon";
 import { StatusBadge, StatusBar } from "@/components/copa/StatusBadge";
 import {
   AlertDialog,
@@ -33,7 +34,18 @@ import {
   type OrderStatus,
   type Scoreboard,
 } from "@/lib/orders-store";
-import { Ban, Check, ChevronRight, Edit2, Plus, Save, Trash2, Trophy, X } from "lucide-react";
+import {
+  Ban,
+  Check,
+  ChevronRight,
+  Edit2,
+  Plus,
+  Save,
+  Trash2,
+  Trophy,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export function AdminPanel() {
@@ -377,7 +389,7 @@ function SidesAdminV2() {
           setEmoji(SIDE_ICON_OPTIONS[0]);
           toast.success("Recheio adicionado!");
         }}
-        className="grid gap-2 rounded-2xl border border-border bg-card p-2 sm:grid-cols-[76px_1fr_auto]"
+        className="grid gap-2 rounded-2xl border border-border bg-card p-2 sm:grid-cols-[160px_1fr_auto]"
       >
         <IconPicker value={emoji} onChange={setEmoji} label="Ícone do novo recheio" />
         <input
@@ -402,7 +414,7 @@ function SidesAdminV2() {
           >
             {editingId === side.id ? (
               <div className="space-y-3">
-                <div className="grid gap-2 sm:grid-cols-[76px_1fr]">
+                <div className="grid gap-2 sm:grid-cols-[160px_1fr]">
                   <IconPicker
                     value={editingEmoji}
                     onChange={setEditingEmoji}
@@ -436,8 +448,8 @@ function SidesAdminV2() {
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-background text-2xl">
-                  {side.emoji}
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-background">
+                  <SideIcon icon={side.emoji} label={`Ícone de ${side.name}`} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-semibold">{side.name}</div>
@@ -491,6 +503,45 @@ function SidesAdminV2() {
   );
 }
 
+const SVG_ICON_PREFIX = "data:image/svg+xml;base64,";
+const MAX_SVG_ICON_BYTES = 64 * 1024;
+
+function sanitizeSvgIcon(svg: string) {
+  if (!/<svg[\s>]/i.test(svg)) return null;
+
+  return svg
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
+    .replace(/\s(href|xlink:href)\s*=\s*(['"])\s*javascript:[\s\S]*?\2/gi, "");
+}
+
+function encodeSvgIcon(svg: string) {
+  const bytes = new TextEncoder().encode(svg);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return `${SVG_ICON_PREFIX}${btoa(binary)}`;
+}
+
+async function readSvgIcon(file: File) {
+  if (!file.name.toLowerCase().endsWith(".svg") && file.type !== "image/svg+xml") {
+    throw new Error("Escolha um arquivo SVG.");
+  }
+
+  if (file.size > MAX_SVG_ICON_BYTES) {
+    throw new Error("Use um SVG menor que 64 KB.");
+  }
+
+  const sanitized = sanitizeSvgIcon(await file.text());
+  if (!sanitized) {
+    throw new Error("Esse SVG não parece válido.");
+  }
+
+  return encodeSvgIcon(sanitized);
+}
+
 function IconPicker({
   value,
   onChange,
@@ -501,20 +552,50 @@ function IconPicker({
   label: string;
 }) {
   return (
-    <label className="block">
-      <span className="sr-only">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full rounded-xl border border-input bg-background px-2 text-center text-xl outline-none ring-primary/30 focus:border-primary focus:ring-4"
+    <div className="grid grid-cols-[44px_1fr_44px] gap-2">
+      <div className="grid h-10 w-11 place-items-center rounded-xl border border-border bg-background">
+        <SideIcon icon={value} label={label} />
+      </div>
+      <label className="block">
+        <span className="sr-only">{label}</span>
+        <select
+          value={value.startsWith(SVG_ICON_PREFIX) ? SIDE_ICON_OPTIONS[0] : value}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-10 w-full rounded-xl border border-input bg-background px-2 text-center text-xl outline-none ring-primary/30 focus:border-primary focus:ring-4"
+        >
+          {SIDE_ICON_OPTIONS.map((icon) => (
+            <option key={icon} value={icon}>
+              {icon}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label
+        className="grid h-10 w-11 cursor-pointer place-items-center rounded-xl bg-muted text-muted-foreground"
+        title="Enviar SVG"
       >
-        {SIDE_ICON_OPTIONS.map((icon) => (
-          <option key={icon} value={icon}>
-            {icon}
-          </option>
-        ))}
-      </select>
-    </label>
+        <Upload className="h-4 w-4" />
+        <input
+          type="file"
+          accept=".svg,image/svg+xml"
+          className="sr-only"
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+
+            try {
+              onChange(await readSvgIcon(file));
+              toast.success("SVG carregado!");
+            } catch (error) {
+              toast.error(
+                error instanceof Error ? error.message : "Não foi possível carregar o SVG.",
+              );
+            }
+          }}
+        />
+      </label>
+    </div>
   );
 }
 
