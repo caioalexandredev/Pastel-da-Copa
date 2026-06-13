@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { AppShell } from "@/components/copa/AppShell";
 import { StatusBadge, StatusBar } from "@/components/copa/StatusBadge";
-import { getOrders, useStore } from "@/lib/orders-store";
+import { getMyOrders, useStore } from "@/lib/orders-store";
 import { ClipboardList } from "lucide-react";
 
 export default function MeusPedidos() {
   useStore();
-  const orders = getOrders();
+  const orders = getMyOrders();
 
   return (
     <AppShell>
@@ -31,7 +31,7 @@ export default function MeusPedidos() {
         <div className="rounded-3xl border-2 border-dashed border-border bg-card p-10 text-center">
           <ClipboardList className="mx-auto h-10 w-10 text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground">
-            Nenhum pedido ainda. Bora pro balcão!
+            Nenhum pedido neste celular ainda. Bora pro balcão!
           </p>
           <Link
             href="/pedido"

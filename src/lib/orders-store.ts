@@ -19,6 +19,7 @@ let current: StoreSnapshot = {
   scoreboard: DEFAULT_SCOREBOARD,
 };
 
+const MY_ORDERS_KEY = "copa.my-orders";
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -56,6 +57,38 @@ export function getOrders(): Order[] {
   return current.orders;
 }
 
+function readMyOrderIds(): number[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(MY_ORDERS_KEY);
+    if (!raw) return [];
+
+    const ids = JSON.parse(raw) as unknown;
+    return Array.isArray(ids)
+      ? ids.filter((id): id is number => typeof id === "number" && Number.isFinite(id))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeMyOrderIds(ids: number[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MY_ORDERS_KEY, JSON.stringify(ids));
+}
+
+export function rememberMyOrder(id: number) {
+  const ids = readMyOrderIds();
+  writeMyOrderIds([id, ...ids.filter((existing) => existing !== id)]);
+  emit();
+}
+
+export function getMyOrders(): Order[] {
+  const ids = new Set(readMyOrderIds());
+  return current.orders.filter((order) => ids.has(order.id));
+}
+
 export function getSides(): Side[] {
   return current.sides;
 }
@@ -69,6 +102,7 @@ export async function addOrder(name: string, sides: string[]): Promise<Order> {
     method: "POST",
     body: JSON.stringify({ name, sides }),
   });
+  rememberMyOrder(order.id);
   await refreshStore();
   return order;
 }
