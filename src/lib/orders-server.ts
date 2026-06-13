@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import {
+  DEFAULT_SIDE_EMOJI,
   DEFAULT_SCOREBOARD,
   DEFAULT_SIDES,
   ORDER_STATUSES,
@@ -40,6 +41,51 @@ type ScoreboardRow = {
 
 let initPromise: Promise<void> | undefined;
 
+const GENERIC_OR_BROKEN_EMOJIS = new Set([
+  DEFAULT_SIDE_EMOJI,
+  "â­",
+  "ðŸ§€",
+  "ðŸ¥©",
+  "ðŸ—",
+  "ðŸ•",
+  "ðŸŒ¶ï¸",
+  "ðŸŒ´",
+  "ðŸ«",
+  "ðŸŒ",
+]);
+
+const SIDE_EMOJI_RULES: Array<[RegExp, string]> = [
+  [/queijo|mussarela|mozarela|catupiry|cheddar|requeij/i, "🧀"],
+  [/carne|boi|bovina|costela|hamb[uú]rguer/i, "🥩"],
+  [/frango|galinha|chicken/i, "🍗"],
+  [/pizza|presunto|mu[cç]arela/i, "🍕"],
+  [/calabresa|pepperoni|pimenta/i, "🌶️"],
+  [/palmito/i, "🌴"],
+  [/chocolate|brigadeiro|nutella|doce de leite/i, "🍫"],
+  [/banana|canela/i, "🍌"],
+  [/bacon|toucinho/i, "🥓"],
+  [/ovo/i, "🥚"],
+  [/cebola/i, "🧅"],
+  [/tomate|molho/i, "🍅"],
+  [/milho/i, "🌽"],
+  [/cheiro verde|alface|r[uú]cula|couve|verdura|veget/i, "🥬"],
+  [/vinagrete/i, "🥗"],
+  [/cogumelo|champignon/i, "🍄"],
+  [/batata/i, "🥔"],
+  [/azeitona/i, "🫒"],
+  [/camar[aã]o/i, "🦐"],
+  [/atum|peixe|bacalhau|sardinha/i, "🐟"],
+  [/abacaxi/i, "🍍"],
+  [/coco/i, "🥥"],
+  [/morango/i, "🍓"],
+  [/mel/i, "🍯"],
+];
+
+export function inferSideEmoji(name: string) {
+  const match = SIDE_EMOJI_RULES.find(([pattern]) => pattern.test(name));
+  return match?.[1] ?? DEFAULT_SIDE_EMOJI;
+}
+
 function sql() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -47,6 +93,20 @@ function sql() {
   }
 
   return neon(databaseUrl);
+}
+
+function slugifySideName(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function cleanSideEmoji(name: string, emoji?: string | null) {
+  const trimmed = emoji?.trim();
+  return trimmed || inferSideEmoji(name);
 }
 
 async function initDb() {
@@ -99,6 +159,13 @@ async function initDb() {
       INSERT INTO copa_sides (id, name, emoji, active)
       VALUES (${side.id}, ${side.name}, ${side.emoji}, ${side.active})
       ON CONFLICT (id) DO NOTHING
+    `;
+
+    await db`
+      UPDATE copa_sides
+      SET emoji = ${side.emoji}
+      WHERE id = ${side.id}
+        AND emoji = ANY(${Array.from(GENERIC_OR_BROKEN_EMOJIS)})
     `;
   }
 
@@ -229,12 +296,12 @@ export async function deleteOrder(id: number) {
   return order ? mapOrder(order) : null;
 }
 
-export async function createSide(name: string) {
+export async function createSide(name: string, emoji?: string) {
   const db = await ready();
   const side: Side = {
-    id: `${name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
+    id: `${slugifySideName(name) || "recheio"}-${Date.now()}`,
     name,
-    emoji: "⭐",
+    emoji: cleanSideEmoji(name, emoji),
     active: true,
   };
 
@@ -252,6 +319,46 @@ export async function setSideActive(id: string) {
   const rows = await db`
     UPDATE copa_sides
     SET active = NOT active
+    WHERE id = ${id}
+    RETURNING id, name, emoji, active
+  `;
+
+  const side = (rows as SideRow[])[0];
+  return side ? mapSide(side) : null;
+}
+
+export async function updateSide(
+  id: string,
+  updates: Partial<Pick<Side, "name" | "emoji" | "active">>,
+) {
+  const db = await ready();
+  const currentRows = await db`
+    SELECT id, name, emoji, active
+    FROM copa_sides
+    WHERE id = ${id}
+  `;
+  const current = (currentRows as SideRow[])[0];
+
+  if (!current) return null;
+
+  const name = updates.name?.trim() || current.name;
+  const emoji = cleanSideEmoji(name, updates.emoji ?? current.emoji);
+  const active = updates.active ?? current.active;
+
+  const rows = await db`
+    UPDATE copa_sides
+    SET name = ${name}, emoji = ${emoji}, active = ${active}
+    WHERE id = ${id}
+    RETURNING id, name, emoji, active
+  `;
+
+  return mapSide((rows as SideRow[])[0]);
+}
+
+export async function deleteSide(id: string) {
+  const db = await ready();
+  const rows = await db`
+    DELETE FROM copa_sides
     WHERE id = ${id}
     RETURNING id, name, emoji, active
   `;

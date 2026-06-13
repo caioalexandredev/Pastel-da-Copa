@@ -8,12 +8,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as { name?: string } | null;
+  const body = (await request.json().catch(() => null)) as {
+    name?: string;
+    emoji?: string;
+  } | null;
   const name = body?.name?.trim();
+  const emoji = body?.emoji?.trim();
 
   if (!name) {
     return NextResponse.json({ error: "Nome do acompanhamento é obrigatório." }, { status: 400 });
   }
 
-  return NextResponse.json(await createSide(name), { status: 201 });
+  return NextResponse.json(await createSide(name, emoji), { status: 201 });
 }

@@ -15,14 +15,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  SIDE_ICON_OPTIONS,
   STATUS_FLOW,
   addSide,
   cancelOrder,
+  deleteSide,
   deleteOrder,
   getScoreboard,
   getOrders,
   getSides,
   toggleSide,
+  updateSide,
   updateOrderStatus,
   updateScoreboard,
   useStore,
@@ -30,7 +33,7 @@ import {
   type OrderStatus,
   type Scoreboard,
 } from "@/lib/orders-store";
-import { Ban, Check, ChevronRight, Plus, Trash2, Trophy, X } from "lucide-react";
+import { Ban, Check, ChevronRight, Edit2, Plus, Save, Trash2, Trophy, X } from "lucide-react";
 import { toast } from "sonner";
 
 export function AdminPanel() {
@@ -77,7 +80,7 @@ export function AdminPanel() {
         ) : tab === "placar" ? (
           <ScoreboardAdmin />
         ) : (
-          <SidesAdmin />
+          <SidesAdminV2 />
         )}
       </div>
     </AppShell>
@@ -328,6 +331,237 @@ function SidesAdmin() {
         ))}
       </ul>
     </div>
+  );
+}
+
+function SidesAdminV2() {
+  useStore();
+  const sides = getSides();
+  const [name, setName] = useState("");
+  const [emoji, setEmoji] = useState<string>(SIDE_ICON_OPTIONS[0]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingEmoji, setEditingEmoji] = useState<string>(SIDE_ICON_OPTIONS[0]);
+
+  const startEditing = (side: (typeof sides)[number]) => {
+    setEditingId(side.id);
+    setEditingName(side.name);
+    setEditingEmoji(side.emoji || SIDE_ICON_OPTIONS[0]);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingName("");
+    setEditingEmoji(SIDE_ICON_OPTIONS[0]);
+  };
+
+  const saveEditing = async (id: string) => {
+    if (!editingName.trim()) {
+      toast.error("Nome do recheio é obrigatório.");
+      return;
+    }
+
+    await updateSide(id, { name: editingName.trim(), emoji: editingEmoji });
+    cancelEditing();
+    toast.success("Recheio atualizado!");
+  };
+
+  return (
+    <div className="space-y-4">
+      <form
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (!name.trim()) return;
+          await addSide(name.trim(), emoji);
+          setName("");
+          setEmoji(SIDE_ICON_OPTIONS[0]);
+          toast.success("Recheio adicionado!");
+        }}
+        className="grid gap-2 rounded-2xl border border-border bg-card p-2 sm:grid-cols-[76px_1fr_auto]"
+      >
+        <IconPicker value={emoji} onChange={setEmoji} label="Ícone do novo recheio" />
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Novo recheio..."
+          className="min-w-0 rounded-xl bg-background px-3 py-2 text-sm outline-none"
+        />
+        <button
+          type="submit"
+          className="flex items-center justify-center gap-1 rounded-xl bg-primary px-3 py-2 text-sm font-bold text-primary-foreground"
+        >
+          <Plus className="h-4 w-4" /> Add
+        </button>
+      </form>
+
+      <ul className="space-y-2">
+        {sides.map((side) => (
+          <li
+            key={side.id}
+            className="rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]"
+          >
+            {editingId === side.id ? (
+              <div className="space-y-3">
+                <div className="grid gap-2 sm:grid-cols-[76px_1fr]">
+                  <IconPicker
+                    value={editingEmoji}
+                    onChange={setEditingEmoji}
+                    label={`Ícone de ${side.name}`}
+                  />
+                  <input
+                    value={editingName}
+                    onChange={(event) => setEditingName(event.target.value)}
+                    className="rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none ring-primary/30 focus:border-primary focus:ring-4"
+                    autoFocus
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      saveEditing(side.id).catch(() => toast.error("Não foi possível salvar."))
+                    }
+                    className="flex items-center justify-center gap-1 rounded-xl bg-primary px-3 py-2 text-sm font-bold text-primary-foreground"
+                  >
+                    <Save className="h-4 w-4" /> Salvar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditing}
+                    className="flex items-center justify-center gap-1 rounded-xl bg-muted px-3 py-2 text-sm font-bold text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" /> Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-background text-2xl">
+                  {side.emoji}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold">{side.name}</div>
+                  <div className={`text-xs ${side.active ? "text-primary" : "text-destructive"}`}>
+                    {side.active ? "Disponível" : "Esgotado"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleSide(side.id)}
+                  className={`relative h-7 w-12 rounded-full transition-colors ${
+                    side.active ? "bg-primary" : "bg-muted"
+                  }`}
+                  aria-label={side.active ? "Marcar como esgotado" : "Marcar como disponível"}
+                  title={side.active ? "Esgotar" : "Disponibilizar"}
+                >
+                  <span
+                    className={`absolute top-1 grid h-5 w-5 place-items-center rounded-full bg-white shadow transition-all ${
+                      side.active ? "left-6" : "left-1"
+                    }`}
+                  >
+                    {side.active ? (
+                      <Check className="h-3 w-3 text-primary" />
+                    ) : (
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startEditing(side)}
+                  className="grid h-9 w-9 place-items-center rounded-xl bg-muted text-muted-foreground"
+                  aria-label={`Editar ${side.name}`}
+                  title="Editar"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+                <SideDeleteDialog
+                  sideName={side.name}
+                  onConfirm={async () => {
+                    await deleteSide(side.id);
+                    toast.success("Recheio excluído.");
+                  }}
+                />
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function IconPicker({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+}) {
+  return (
+    <label className="block">
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full rounded-xl border border-input bg-background px-2 text-center text-xl outline-none ring-primary/30 focus:border-primary focus:ring-4"
+      >
+        {SIDE_ICON_OPTIONS.map((icon) => (
+          <option key={icon} value={icon}>
+            {icon}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function SideDeleteDialog({
+  sideName,
+  onConfirm,
+}: {
+  sideName: string;
+  onConfirm: () => Promise<void>;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <button
+          type="button"
+          className="grid h-9 w-9 place-items-center rounded-xl bg-destructive text-destructive-foreground"
+          aria-label={`Excluir ${sideName}`}
+          title="Excluir"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="max-w-sm rounded-3xl border-border p-0">
+        <div className="rounded-t-3xl bg-destructive p-5 text-destructive-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-3xl tracking-normal">
+              Excluir {sideName}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-white/85">
+              Esse recheio sai da lista de pedidos novos, mas pedidos antigos continuam com o texto
+              que já foi salvo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </div>
+        <AlertDialogFooter className="gap-2 p-5 pt-1 sm:space-x-0">
+          <AlertDialogCancel className="mt-0 rounded-xl">Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm().catch(() => toast.error("Não foi possível excluir o recheio."));
+            }}
+            className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

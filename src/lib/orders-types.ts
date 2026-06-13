@@ -61,6 +61,36 @@ export interface Scoreboard {
   live: boolean;
 }
 
+export const DEFAULT_SIDE_EMOJI = "⭐";
+
+export const SIDE_ICON_OPTIONS = [
+  "⭐",
+  "🧀",
+  "🥩",
+  "🍗",
+  "🍕",
+  "🌶️",
+  "🌴",
+  "🍫",
+  "🍌",
+  "🥓",
+  "🥚",
+  "🧅",
+  "🍅",
+  "🌽",
+  "🥬",
+  "🥗",
+  "🍄",
+  "🥔",
+  "🫒",
+  "🦐",
+  "🐟",
+  "🍍",
+  "🥥",
+  "🍓",
+  "🍯",
+] as const;
+
 export const DEFAULT_SIDES: Side[] = [
   { id: "queijo", name: "Queijo", emoji: "🧀", active: true },
   { id: "carne", name: "Carne", emoji: "🥩", active: true },

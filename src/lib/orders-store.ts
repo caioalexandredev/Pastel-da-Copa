@@ -2,6 +2,7 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
   DEFAULT_SIDES,
   DEFAULT_SCOREBOARD,
+  SIDE_ICON_OPTIONS,
   STATUS_COLOR,
   STATUS_FLOW,
   type Order,
@@ -11,7 +12,15 @@ import {
   type StoreSnapshot,
 } from "@/lib/orders-types";
 
-export { STATUS_COLOR, STATUS_FLOW, type Order, type OrderStatus, type Scoreboard, type Side };
+export {
+  SIDE_ICON_OPTIONS,
+  STATUS_COLOR,
+  STATUS_FLOW,
+  type Order,
+  type OrderStatus,
+  type Scoreboard,
+  type Side,
+};
 
 let current: StoreSnapshot = {
   orders: [],
@@ -133,10 +142,28 @@ export async function toggleSide(id: string) {
   await refreshStore();
 }
 
-export async function addSide(name: string) {
+export async function addSide(name: string, emoji?: string) {
   await request<Side>("/api/sides", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, emoji }),
+  });
+  await refreshStore();
+}
+
+export async function updateSide(
+  id: string,
+  updates: Partial<Pick<Side, "name" | "emoji" | "active">>,
+) {
+  await request<Side>(`/api/sides/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+  await refreshStore();
+}
+
+export async function deleteSide(id: string) {
+  await request<Side>(`/api/sides/${id}`, {
+    method: "DELETE",
   });
   await refreshStore();
 }
