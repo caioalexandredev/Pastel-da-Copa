@@ -3,6 +3,6 @@ import { snapshot } from "@/lib/orders-server";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
-  return NextResponse.json(snapshot());
+export async function GET() {
+  return NextResponse.json(await snapshot());
 }

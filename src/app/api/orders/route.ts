@@ -3,8 +3,8 @@ import { createOrder, snapshot } from "@/lib/orders-server";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
-  return NextResponse.json(snapshot().orders);
+export async function GET() {
+  return NextResponse.json((await snapshot()).orders);
 }
 
 export async function POST(request: Request) {
@@ -23,5 +23,5 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json(createOrder(name, sides), { status: 201 });
+  return NextResponse.json(await createOrder(name, sides), { status: 201 });
 }

@@ -115,6 +115,17 @@ export async function updateOrderStatus(id: number, status: OrderStatus) {
   await refreshStore();
 }
 
+export async function cancelOrder(id: number) {
+  await updateOrderStatus(id, "Cancelado");
+}
+
+export async function deleteOrder(id: number) {
+  await request<Order>(`/api/orders/${id}`, {
+    method: "DELETE",
+  });
+  await refreshStore();
+}
+
 export async function toggleSide(id: string) {
   await request<Side>(`/api/sides/${id}`, {
     method: "PATCH",

@@ -3,7 +3,17 @@ export type OrderStatus =
   | "Preparando"
   | "Fritando"
   | "Pronto para Retirada"
-  | "Entregue";
+  | "Entregue"
+  | "Cancelado";
+
+export const ORDER_STATUSES: OrderStatus[] = [
+  "Recebido",
+  "Preparando",
+  "Fritando",
+  "Pronto para Retirada",
+  "Entregue",
+  "Cancelado",
+];
 
 export const STATUS_FLOW: OrderStatus[] = [
   "Recebido",
@@ -19,6 +29,7 @@ export const STATUS_COLOR: Record<OrderStatus, string> = {
   Fritando: "bg-[var(--color-status-fritando)]",
   "Pronto para Retirada": "bg-[var(--color-status-pronto)]",
   Entregue: "bg-[var(--color-status-entregue)]",
+  Cancelado: "bg-destructive",
 };
 
 export interface Order {

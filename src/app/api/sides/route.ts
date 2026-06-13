@@ -3,8 +3,8 @@ import { createSide, snapshot } from "@/lib/orders-server";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
-  return NextResponse.json(snapshot().sides);
+export async function GET() {
+  return NextResponse.json((await snapshot()).sides);
 }
 
 export async function POST(request: Request) {
@@ -15,5 +15,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nome do acompanhamento é obrigatório." }, { status: 400 });
   }
 
-  return NextResponse.json(createSide(name), { status: 201 });
+  return NextResponse.json(await createSide(name), { status: 201 });
 }

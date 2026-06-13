@@ -1,11 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AppShell } from "@/components/copa/AppShell";
 import { StatusBadge, StatusBar } from "@/components/copa/StatusBadge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   STATUS_FLOW,
   addSide,
+  cancelOrder,
+  deleteOrder,
   getScoreboard,
   getOrders,
   getSides,
@@ -17,16 +30,17 @@ import {
   type OrderStatus,
   type Scoreboard,
 } from "@/lib/orders-store";
-import { Check, ChevronRight, Plus, Trophy, X } from "lucide-react";
+import { Ban, Check, ChevronRight, Plus, Trash2, Trophy, X } from "lucide-react";
 import { toast } from "sonner";
 
 export function AdminPanel() {
   useStore();
   const [tab, setTab] = useState<"fila" | "placar" | "acomps">("fila");
   const orders = getOrders()
-    .filter((order) => order.status !== "Entregue")
+    .filter((order) => order.status !== "Entregue" && order.status !== "Cancelado")
     .sort((a, b) => a.createdAt - b.createdAt);
   const delivered = getOrders().filter((order) => order.status === "Entregue").length;
+  const canceled = getOrders().filter((order) => order.status === "Cancelado").length;
 
   return (
     <AppShell locked>
@@ -40,7 +54,7 @@ export function AdminPanel() {
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Na fila" value={orders.length} tone="primary" />
         <Stat label="Entregues" value={delivered} tone="accent" />
-        <Stat label="Total" value={orders.length + delivered} tone="secondary" />
+        <Stat label="Cancelados" value={canceled} tone="secondary" />
       </div>
 
       <div className="mt-5 inline-flex w-full rounded-2xl border border-border bg-card p-1">
@@ -165,10 +179,85 @@ function Queue({ orders }: { orders: Order[] }) {
                 <Check className="h-4 w-4" /> Entregar
               </button>
             </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <OrderActionDialog
+                title={`Cancelar pedido #${order.id}?`}
+                description="Ele sai da fila da cozinha, mas continua aparecendo para a pessoa como cancelado."
+                actionLabel="Cancelar pedido"
+                actionClassName="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                onConfirm={async () => {
+                  await cancelOrder(order.id);
+                  toast.success(`#${order.id} cancelado.`);
+                }}
+              >
+                <button className="flex items-center justify-center gap-1 rounded-xl bg-secondary px-3 py-2.5 text-sm font-bold text-secondary-foreground">
+                  <Ban className="h-4 w-4" /> Cancelar
+                </button>
+              </OrderActionDialog>
+              <OrderActionDialog
+                title={`Apagar pedido #${order.id}?`}
+                description="Essa ação remove o pedido do banco de dados. Use só para pedido duplicado ou criado por engano."
+                actionLabel="Apagar de vez"
+                actionClassName="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onConfirm={async () => {
+                  await deleteOrder(order.id);
+                  toast.success(`#${order.id} apagado.`);
+                }}
+              >
+                <button className="flex items-center justify-center gap-1 rounded-xl bg-destructive px-3 py-2.5 text-sm font-bold text-destructive-foreground">
+                  <Trash2 className="h-4 w-4" /> Apagar
+                </button>
+              </OrderActionDialog>
+            </div>
           </li>
         );
       })}
     </ul>
+  );
+}
+
+function OrderActionDialog({
+  children,
+  title,
+  description,
+  actionLabel,
+  actionClassName,
+  onConfirm,
+}: {
+  children: ReactNode;
+  title: string;
+  description: string;
+  actionLabel: string;
+  actionClassName: string;
+  onConfirm: () => Promise<void>;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+      <AlertDialogContent className="max-w-sm rounded-3xl border-border p-0">
+        <div className="rounded-t-3xl bg-[image:var(--gradient-hero)] p-5 text-primary-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-3xl tracking-normal">
+              {title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-white/85">
+              {description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </div>
+        <AlertDialogFooter className="gap-2 p-5 pt-1 sm:space-x-0">
+          <AlertDialogCancel className="mt-0 rounded-xl">Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm().catch(() => toast.error("Não foi possível concluir a ação."));
+            }}
+            className={`rounded-xl ${actionClassName}`}
+          >
+            {actionLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

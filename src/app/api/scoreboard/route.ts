@@ -4,8 +4,8 @@ import { type Scoreboard } from "@/lib/orders-types";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
-  return NextResponse.json(snapshot().scoreboard);
+export async function GET() {
+  return NextResponse.json((await snapshot()).scoreboard);
 }
 
 export async function PUT(request: Request) {
@@ -15,5 +15,5 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Placar inválido." }, { status: 400 });
   }
 
-  return NextResponse.json(updateScoreboard(body));
+  return NextResponse.json(await updateScoreboard(body));
 }

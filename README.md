@@ -31,6 +31,7 @@ npm run dev
 - `GET /api/orders`: lista pedidos.
 - `POST /api/orders`: cria pedido com `{ "name": "...", "sides": ["..."] }`.
 - `PATCH /api/orders/:id`: atualiza status com `{ "status": "Preparando" }`.
+- `DELETE /api/orders/:id`: apaga um pedido.
 - `GET /api/scoreboard`: mostra o placar atual.
 - `PUT /api/scoreboard`: atualiza o placar do jogo.
 - `GET /api/sides`: lista acompanhamentos.
@@ -41,4 +42,6 @@ npm run dev
 
 O painel da cozinha fica em `/cozinha-da-copa-2026`.
 
-O armazenamento atual usa memória do servidor para continuar 100% grátis e sem cadastro em banco. Para produção com persistência entre reinícios/deploys, conecte depois um banco gratuito como Vercel Postgres/Neon/Supabase no mesmo contrato da API.
+## Banco de dados
+
+Configure `DATABASE_URL` no `.env.local` e nas variáveis de ambiente da Vercel. O projeto cria automaticamente as tabelas `copa_orders`, `copa_sides` e `copa_scoreboard` no Neon/Postgres na primeira chamada da API.
