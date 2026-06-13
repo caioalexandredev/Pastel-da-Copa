@@ -417,6 +417,17 @@ function ScoreboardAdmin() {
         </label>
         <label className="col-span-2 block">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Tempo médio de entrega
+          </span>
+          <input
+            value={draft.prepTimeLabel}
+            onChange={(event) => setField("prepTimeLabel", event.target.value)}
+            placeholder="Ex: 12 min"
+            className="mt-2 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none ring-primary/30 focus:border-primary focus:ring-4"
+          />
+        </label>
+        <label className="col-span-2 block">
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Local
           </span>
           <input

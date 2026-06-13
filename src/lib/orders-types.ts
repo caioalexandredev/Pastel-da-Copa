@@ -57,6 +57,7 @@ export interface Scoreboard {
   minute: string;
   period: string;
   venue: string;
+  prepTimeLabel: string;
   live: boolean;
 }
 
@@ -81,6 +82,7 @@ export const DEFAULT_SCOREBOARD: Scoreboard = {
   minute: "75'",
   period: "Segundo tempo",
   venue: "Estádio Pastelão",
+  prepTimeLabel: "12 min",
   live: true,
 };
 

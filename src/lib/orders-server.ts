@@ -34,6 +34,7 @@ type ScoreboardRow = {
   minute: string;
   period: string;
   venue: string;
+  prep_time_label: string;
   live: boolean;
 };
 
@@ -82,9 +83,15 @@ async function initDb() {
       minute TEXT NOT NULL,
       period TEXT NOT NULL,
       venue TEXT NOT NULL,
+      prep_time_label TEXT NOT NULL DEFAULT '12 min',
       live BOOLEAN NOT NULL DEFAULT true,
       CONSTRAINT one_scoreboard CHECK (id = 1)
     )
+  `;
+
+  await db`
+    ALTER TABLE copa_scoreboard
+    ADD COLUMN IF NOT EXISTS prep_time_label TEXT NOT NULL DEFAULT '12 min'
   `;
 
   for (const side of DEFAULT_SIDES) {
@@ -107,6 +114,7 @@ async function initDb() {
       minute,
       period,
       venue,
+      prep_time_label,
       live
     )
     VALUES (
@@ -120,6 +128,7 @@ async function initDb() {
       ${DEFAULT_SCOREBOARD.minute},
       ${DEFAULT_SCOREBOARD.period},
       ${DEFAULT_SCOREBOARD.venue},
+      ${DEFAULT_SCOREBOARD.prepTimeLabel},
       ${DEFAULT_SCOREBOARD.live}
     )
     ON CONFLICT (id) DO NOTHING
@@ -162,6 +171,7 @@ function mapScoreboard(row: ScoreboardRow): Scoreboard {
     minute: row.minute,
     period: row.period,
     venue: row.venue,
+    prepTimeLabel: row.prep_time_label,
     live: row.live,
   };
 }
@@ -171,7 +181,7 @@ export async function snapshot() {
   const [orders, sides, scoreboard] = await Promise.all([
     db`SELECT id, name, sides, status, created_at FROM copa_orders ORDER BY created_at DESC`,
     db`SELECT id, name, emoji, active FROM copa_sides ORDER BY name ASC`,
-    db`SELECT home_flag, away_flag, home_label, away_label, home_score, away_score, minute, period, venue, live FROM copa_scoreboard WHERE id = 1`,
+    db`SELECT home_flag, away_flag, home_label, away_label, home_score, away_score, minute, period, venue, prep_time_label, live FROM copa_scoreboard WHERE id = 1`,
   ]);
 
   return {
@@ -273,9 +283,10 @@ export async function updateScoreboard(scoreboard: Partial<Scoreboard>) {
       minute = ${next.minute},
       period = ${next.period},
       venue = ${next.venue},
+      prep_time_label = ${next.prepTimeLabel},
       live = ${next.live}
     WHERE id = 1
-    RETURNING home_flag, away_flag, home_label, away_label, home_score, away_score, minute, period, venue, live
+    RETURNING home_flag, away_flag, home_label, away_label, home_score, away_score, minute, period, venue, prep_time_label, live
   `;
 
   return mapScoreboard((rows as ScoreboardRow[])[0]);
