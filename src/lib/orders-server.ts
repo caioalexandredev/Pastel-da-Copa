@@ -1,8 +1,10 @@
 import {
+  DEFAULT_SCOREBOARD,
   DEFAULT_SIDES,
   STATUS_FLOW,
   type Order,
   type OrderStatus,
+  type Scoreboard,
   type Side,
 } from "@/lib/orders-types";
 
@@ -10,6 +12,7 @@ type StoreState = {
   counter: number;
   orders: Order[];
   sides: Side[];
+  scoreboard: Scoreboard;
 };
 
 const globalForStore = globalThis as typeof globalThis & {
@@ -21,6 +24,7 @@ function state() {
     counter: 100,
     orders: [],
     sides: DEFAULT_SIDES.map((side) => ({ ...side })),
+    scoreboard: { ...DEFAULT_SCOREBOARD },
   };
 
   return globalForStore.__copaStore;
@@ -31,6 +35,7 @@ export function snapshot() {
   return {
     orders: store.orders,
     sides: store.sides,
+    scoreboard: store.scoreboard,
   };
 }
 
@@ -85,4 +90,17 @@ export function setSideActive(id: string) {
   );
 
   return store.sides.find((side) => side.id === id) ?? null;
+}
+
+export function updateScoreboard(scoreboard: Partial<Scoreboard>) {
+  const store = state();
+  store.scoreboard = {
+    ...store.scoreboard,
+    ...scoreboard,
+    homeScore: Number(scoreboard.homeScore ?? store.scoreboard.homeScore),
+    awayScore: Number(scoreboard.awayScore ?? store.scoreboard.awayScore),
+    live: Boolean(scoreboard.live ?? store.scoreboard.live),
+  };
+
+  return store.scoreboard;
 }

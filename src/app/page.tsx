@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppShell } from "@/components/copa/AppShell";
+import { LiveScoreboard } from "@/components/copa/LiveScoreboard";
 import { Trophy, Flame, Timer } from "lucide-react";
 
 export default function Home() {
@@ -50,41 +51,15 @@ export default function Home() {
         ))}
       </section>
 
-      <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-2xl">Placar da noite</h2>
-          <span className="chip bg-primary text-primary-foreground">AO VIVO</span>
-        </div>
-        <div className="grid grid-cols-3 items-center gap-2 rounded-2xl bg-foreground p-4 text-background">
-          <div className="text-center">
-            <div className="text-3xl">🇧🇷</div>
-            <div className="mt-1 text-xs opacity-80">CASA</div>
-          </div>
-          <div className="text-center font-display text-4xl tracking-widest">2 - 1</div>
-          <div className="text-center">
-            <div className="text-3xl">🇦🇷</div>
-            <div className="mt-1 text-xs opacity-80">VISIT.</div>
-          </div>
-        </div>
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          75&apos; — Segundo tempo · Estádio Pastelão
-        </p>
-      </section>
+      <LiveScoreboard />
 
-      <section className="mt-6 grid grid-cols-2 gap-3">
+      <section className="mt-6">
         <Link
           href="/meus-pedidos"
-          className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+          className="block rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
         >
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Acompanhe</div>
           <div className="mt-1 font-display text-xl">Meus Pedidos</div>
-        </Link>
-        <Link
-          href="/admin"
-          className="rounded-2xl bg-accent p-4 text-accent-foreground shadow-[var(--shadow-card)]"
-        >
-          <div className="text-xs uppercase tracking-wider opacity-80">Cozinha</div>
-          <div className="mt-1 font-display text-xl">Painel Admin</div>
         </Link>
       </section>
     </AppShell>

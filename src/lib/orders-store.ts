@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
   DEFAULT_SIDES,
+  DEFAULT_SCOREBOARD,
   STATUS_COLOR,
   STATUS_FLOW,
   type Order,
   type OrderStatus,
+  type Scoreboard,
   type Side,
   type StoreSnapshot,
 } from "@/lib/orders-types";
 
-export { STATUS_COLOR, STATUS_FLOW, type Order, type OrderStatus, type Side };
+export { STATUS_COLOR, STATUS_FLOW, type Order, type OrderStatus, type Scoreboard, type Side };
 
 let current: StoreSnapshot = {
   orders: [],
   sides: DEFAULT_SIDES,
+  scoreboard: DEFAULT_SCOREBOARD,
 };
 
 const listeners = new Set<() => void>();
@@ -57,6 +60,10 @@ export function getSides(): Side[] {
   return current.sides;
 }
 
+export function getScoreboard(): Scoreboard {
+  return current.scoreboard;
+}
+
 export async function addOrder(name: string, sides: string[]): Promise<Order> {
   const order = await request<Order>("/api/orders", {
     method: "POST",
@@ -85,6 +92,14 @@ export async function addSide(name: string) {
   await request<Side>("/api/sides", {
     method: "POST",
     body: JSON.stringify({ name }),
+  });
+  await refreshStore();
+}
+
+export async function updateScoreboard(scoreboard: Scoreboard) {
+  await request<Scoreboard>("/api/scoreboard", {
+    method: "PUT",
+    body: JSON.stringify(scoreboard),
   });
   await refreshStore();
 }

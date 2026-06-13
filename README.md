@@ -31,8 +31,14 @@ npm run dev
 - `GET /api/orders`: lista pedidos.
 - `POST /api/orders`: cria pedido com `{ "name": "...", "sides": ["..."] }`.
 - `PATCH /api/orders/:id`: atualiza status com `{ "status": "Preparando" }`.
+- `GET /api/scoreboard`: mostra o placar atual.
+- `PUT /api/scoreboard`: atualiza o placar do jogo.
 - `GET /api/sides`: lista acompanhamentos.
 - `POST /api/sides`: cria acompanhamento com `{ "name": "..." }`.
 - `PATCH /api/sides/:id`: alterna disponível/esgotado.
+
+## Link reservado do admin
+
+O painel da cozinha fica em `/cozinha-da-copa-2026`.
 
 O armazenamento atual usa memória do servidor para continuar 100% grátis e sem cadastro em banco. Para produção com persistência entre reinícios/deploys, conecte depois um banco gratuito como Vercel Postgres/Neon/Supabase no mesmo contrato da API.

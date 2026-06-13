@@ -36,6 +36,19 @@ export interface Side {
   active: boolean;
 }
 
+export interface Scoreboard {
+  homeFlag: string;
+  awayFlag: string;
+  homeLabel: string;
+  awayLabel: string;
+  homeScore: number;
+  awayScore: number;
+  minute: string;
+  period: string;
+  venue: string;
+  live: boolean;
+}
+
 export const DEFAULT_SIDES: Side[] = [
   { id: "queijo", name: "Queijo", emoji: "🧀", active: true },
   { id: "carne", name: "Carne", emoji: "🥩", active: true },
@@ -47,7 +60,21 @@ export const DEFAULT_SIDES: Side[] = [
   { id: "banana", name: "Banana c/ Canela", emoji: "🍌", active: true },
 ];
 
+export const DEFAULT_SCOREBOARD: Scoreboard = {
+  homeFlag: "🇧🇷",
+  awayFlag: "🇦🇷",
+  homeLabel: "CASA",
+  awayLabel: "VISIT.",
+  homeScore: 2,
+  awayScore: 1,
+  minute: "75'",
+  period: "Segundo tempo",
+  venue: "Estádio Pastelão",
+  live: true,
+};
+
 export interface StoreSnapshot {
   orders: Order[];
   sides: Side[];
+  scoreboard: Scoreboard;
 }
